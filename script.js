@@ -1,41 +1,94 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const chatbotButton = document.getElementById('chatbot-button');
-    const chatbotWindow = document.getElementById('chatbot-window');
-    const chatbotMessages = document.getElementById('chatbot-messages');
-    const chatbotInput = document.getElementById('chatbot-input');
-
-    chatbotButton.addEventListener('click', function () {
-        chatbotWindow.style.display = chatbotWindow.style.display === 'block' ? 'none' : 'block';
+document.addEventListener("DOMContentLoaded", () => {
+    
+    /** Smooth Scrolling **/
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", e => {
+            e.preventDefault();
+            const target = document.querySelector(anchor.getAttribute("href"));
+            if (target) {
+                window.scrollTo({
+                    top: target.offsetTop - 60,
+                    behavior: "smooth"
+                });
+            }
+        });
     });
 
-    chatbotInput.addEventListener('keypress', async function (e) {
-        if (e.key === 'Enter') {
-            const message = chatbotInput.value.trim();
-            if (message === '') return;
-
-            // Display user message
-            chatbotMessages.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
-            chatbotInput.value = '';
-
-            try {
-                // Send message to FastAPI backend
-                const response = await fetch('http://127.0.0.1:8000/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: message, session_id: "12345" })
-                });
-
-                const data = await response.json();
-
-                // Display bot response
-                chatbotMessages.innerHTML += `<div><strong>Bot:</strong> ${data.reply}</div>`;
-                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-            } catch (error) {
-                console.error('Error:', error);
-                chatbotMessages.innerHTML += `<div><strong>Bot:</strong> Sorry, there was an error processing your request.</div>`;
+    /** Contact Form Validation **/
+    const form = document.querySelector(".contact-form");
+    if (form) {
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+            
+            const fields = {
+                name: document.querySelector('input[placeholder="Your Name"]'),
+                email: document.querySelector('input[placeholder="Your Email"]'),
+                subject: document.querySelector('input[placeholder="Subject"]'),
+                message: document.querySelector("textarea")
+            };
+            
+            clearErrors();
+            let isValid = true;
+            
+            if (!fields.name.value.trim()) {
+                showError(fields.name, "Name is required");
+                isValid = false;
             }
-        }
+            if (!validateEmail(fields.email.value.trim())) {
+                showError(fields.email, "Enter a valid email");
+                isValid = false;
+            }
+            if (!fields.subject.value.trim()) {
+                showError(fields.subject, "Subject cannot be empty");
+                isValid = false;
+            }
+            if (!fields.message.value.trim()) {
+                showError(fields.message, "Message cannot be empty");
+                isValid = false;
+            }
+            
+            if (isValid) {
+                alert("Message sent successfully!");
+                form.reset();
+            }
+        });
+    }
+
+    const validateEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    
+    const showError = (input, message) => {
+        const error = document.createElement("p");
+        error.classList.add("error-message");
+        error.textContent = message;
+        input.parentNode.appendChild(error);
+        input.classList.add("error-input");
+    };
+    
+    const clearErrors = () => {
+        document.querySelectorAll(".error-message").forEach(error => error.remove());
+        document.querySelectorAll(".error-input").forEach(input => input.classList.remove("error-input"));
+    };
+
+    /** Active Link Highlighting **/
+    const sections = document.querySelectorAll("section");
+    const navLinks = document.querySelectorAll(".nav-links a");
+
+    window.addEventListener("scroll", () => {
+        let currentSection = "";
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 80;
+            const sectionHeight = section.clientHeight;
+            if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                currentSection = section.getAttribute("id");
+            }
+        });
+        
+        navLinks.forEach(link => {
+            link.classList.remove("active");
+            if (link.getAttribute("href").includes(currentSection)) {
+                link.classList.add("active");
+            }
+        });
     });
 });
